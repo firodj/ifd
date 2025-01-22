@@ -4,19 +4,24 @@
 #include <string>
 #include <functional>
 
-namespace ifd {
+namespace ifd
+{
+////////////////////////////////////////////////////////////////////////////////
 
-class FileInfoLinux: public FileIconInfoBase {
+class FileInfoLinux: public FileIconInfoBase
+{
 private:
-  struct details;
-  details * m_details{};
+	struct details;
+	details * m_details{};
 public:
-  FileInfoLinux();
-  FileInfoLinux(const std::filesystem::path& path);
-  ~FileInfoLinux();
-  bool HasIcon() override;
-  int GetINode() override;
-  void *GetIcon(std::function<void*(uint8_t*, int, int, char)> createTexture) override;
+	FileInfoLinux();
+	FileInfoLinux(const std::filesystem::path& path);
+	~FileInfoLinux();
+	bool HasIcon() override;
+	int GetINode() override;
+	void *GetIcon(
+		std::function<void*(uint8_t*, int, int, char)> createTexture) override;
 };
 
+////////////////////////////////////////////////////////////////////////////////
 };
