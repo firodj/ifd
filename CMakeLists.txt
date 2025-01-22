@@ -1,68 +1,107 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.20)
+project(ifd)
+
 set(CMAKE_CXX_STANDARD 17)
-project(ImFileDialogExample)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# source code
-set(SOURCES
-	example.cpp
-	ImFileDialog.cpp
+option(ifd_BUILD_EXAMPLES "Enable building examples." ON)
 
-	libs/imgui/imgui.cpp
-	libs/imgui/imgui_widgets.cpp
-	libs/imgui/imgui_draw.cpp
-	libs/imgui/imgui_tables.cpp
-	libs/imgui/backends/imgui_impl_opengl3.cpp
-	libs/imgui/backends/imgui_impl_sdl.cpp
-)
-
-# cmake toolchain
-if(CMAKE_TOOLCHAIN_FILE)
-    include(${CMAKE_TOOLCHAIN_FILE})
-endif(CMAKE_TOOLCHAIN_FILE)
-
-# pkg
-if (UNIX)
-  find_package(PkgConfig REQUIRED)
-endif()
-
-# sdl2
-if(WIN32 OR APPLE OR NOT ${USE_PKG_CHECK_SDL})
-  find_package(SDL2 REQUIRED)
-else()
-  pkg_check_modules(SDL2 REQUIRED sdl2)
-endif()
-
-# opengl
-set(OpenGL_GL_PREFERENCE GLVND CACHE STRING "Linux only: if GLVND, use the vendor-neutral GL libraries (default). If LEGACY, use the legacy ones (might be necessary to have working optirun/primusrun)")
-set_property(CACHE OpenGL_GL_PREFERENCE PROPERTY STRINGS GLVND LEGACY)
 find_package(OpenGL REQUIRED)
+set(SDL_TEST OFF)
+set(SDL2_DISABLE_SDL2MAIN ON)
+set(SDL2_DIR "example/lib/sdl2")
+add_subdirectory("${SDL2_DIR}")
 
-# glew
-find_package(GLEW REQUIRED)
+set(GLAD_SOURCES_DIR "${PROJECT_SOURCE_DIR}/example/lib/glad2")
+add_subdirectory("${GLAD_SOURCES_DIR}/cmake" glad_cmake)
+glad_add_library(glad_gl_core_33 REPRODUCIBLE API gl:core=3.3)
 
-# create executable
-add_executable(ImFileDialogExample ${SOURCES})
-
-# properties
-set_target_properties(ImFileDialogExample PROPERTIES
-    CXX_STANDARD 17
-    CXX_STANDARD_REQUIRED YES
+include_directories(SYSTEM
+	${OPENGL_INCLUDE_DIR}
+	${SDL2_SOURCE_DIR}/include
+	${PROJECT_SOURCE_DIR}/example/lib/stb
+	${PROJECT_SOURCE_DIR}/src
 )
 
-# include directories
-target_include_directories(ImFileDialogExample PRIVATE ${SDL2_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIRS})
-target_include_directories(ImFileDialogExample PRIVATE libs libs/imgui)
+if (NOT TARGET imgui)
+	set(IMGUI_DIR "example/lib/imgui-docking")
 
-# link libraries
-target_link_libraries(ImFileDialogExample ${OPENGL_LIBRARIES})
+	include_directories(SYSTEM
+		${IMGUI_DIR}
+	)
 
-if(WIN32)
-	# link specific win32 libraries
-	target_link_libraries(ImFileDialogExample GLEW::GLEW SDL2::SDL2 SDL2::SDL2main)
+	set(imgui_SOURCES
+		${IMGUI_DIR}/imgui.cpp
+		${IMGUI_DIR}/imgui_demo.cpp
+		${IMGUI_DIR}/imgui_draw.cpp
+		${IMGUI_DIR}/imgui_tables.cpp
+		${IMGUI_DIR}/imgui_widgets.cpp
+	)
 
-elseif(UNIX AND NOT APPLE)
-	# link linux libraries
-	target_link_libraries(ImFileDialogExample ${GLEW_LIBRARIES} ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS} stdc++fs pthread)
-elseif(APPLE)
-	target_link_libraries(ImFileDialogExample GLEW::GLEW ${SDL2_LIBRARIES} ${CMAKE_DL_LIBS})
+	add_library(imgui
+		${imgui_SOURCES}
+	)
+
+	if (BUILD_SHARED_LIBS)
+		target_compile_definitions(imgui INTERFACE imgui_IMPORTS)
+	endif()
+endif()
+
+# ImFileDialog (ifd)
+list(APPEND ifd_SOURCES
+	src/ImFileDialog.cpp
+	src/ImFileDialog.hpp
+	src/ImFileDialogIconInfo.cpp
+	src/ImFileDialogIconInfo.hpp
+	src/DirectoryIterator.hpp
+	src/DirectoryIterator.cpp
+)
+
+if (APPLE)
+	list(APPEND ifd_SOURCES
+		src/ImFileDialog_osx.mm
+		src/ImFileDialog_osx.hpp
+	)
+endif()
+if (WIN32)
+	list(APPEND ifd_SOURCES
+		src/ImFileDialog_win32.cpp
+		src/ImFileDialog_win32.hpp
+	)
+endif()
+
+add_library(ifd ${ifd_SOURCES})
+
+if (APPLE)
+	# Cocoa
+	find_library(COCOA_LIBRARY Cocoa)
+	find_library(APPKIT_LIB AppKit)
+	target_link_libraries(ifd PUBLIC ${COCOA_LIBRARY} ${APPKIT_LIB})
+endif()
+
+target_link_libraries(ifd PUBLIC imgui)
+
+if (ifd_BUILD_EXAMPLES)
+	file(REAL_PATH "${IMGUI_DIR}"
+		IMGUI_DIR_ABS
+		BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+
+	message("IMGUI_DIR_ABS = ${IMGUI_DIR_ABS}")
+
+	add_executable(demo
+		example/demo.cpp
+		${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
+		${IMGUI_DIR}/backends/imgui_impl_sdl2.cpp
+	)
+	target_compile_definitions(demo PRIVATE
+		IMGUI_DIR="${IMGUI_DIR_ABS}"
+		IMGUI_USER_CONFIG="${CMAKE_CURRENT_SOURCE_DIR}/example/imconfig.h"
+	)
+	target_link_libraries(demo
+		${OPENGL_LIBRARIES}
+		SDL2-static
+		glad_gl_core_33
+		imgui
+		ifd
+	)
 endif()
