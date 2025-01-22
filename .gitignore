@@ -38,3 +38,5 @@ imgui.ini
 ImFileDialogExample
 CMakeCache.txt
 CMakeFiles
+
+/example/lib/*
