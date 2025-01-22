@@ -14,3 +14,7 @@ MIT License - Samuel Venable
 * Human readable file size.
 * Hide hidden file from list.
 * Resizable column for file list.
+
+## Demo
+
+<img width="1042" alt="ImFileDialog on MacOS" src="https://github.com/user-attachments/assets/aa868c77-f8d4-4f3c-b9c5-2bac00bece31" />
