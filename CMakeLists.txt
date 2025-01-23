@@ -4,18 +4,41 @@ project(ifd)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-option(ifd_BUILD_EXAMPLES "Enable building examples." OFF)
+option(ifd_BUILD_EXAMPLES "Enable building examples." ON)
 
 find_package(OpenGL REQUIRED)
+include(FetchContent)
+FetchContent_Declare(
+    imgui
+    GIT_REPOSITORY https://github.com/ocornut/imgui.git
+    GIT_TAG v1.91.6-docking
+    GIT_SHALLOW TRUE         # Equivalent to --depth=1
+)
+FetchContent_Declare(
+    sdl2
+    GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
+    GIT_TAG release-2.30.3
+    GIT_SHALLOW TRUE         # Equivalent to --depth=1
+)
+FetchContent_Declare(
+    glad2
+    GIT_REPOSITORY https://github.com/Dav1dde/glad.git
+    GIT_TAG v2.0.6
+    GIT_SHALLOW TRUE         # Equivalent to --depth=1
+	SOURCE_SUBDIR cmake
+)
 
 if (NOT TARGET glad_gl_core_33)
-	set(GLAD_SOURCES_DIR "${PROJECT_SOURCE_DIR}/example/lib/glad2")
-	add_subdirectory("${GLAD_SOURCES_DIR}/cmake" glad_cmake)
+	FetchContent_MakeAvailable(glad2)
+	#set(GLAD_SOURCES_DIR "${glad2_SOURCE_DIR}")
+	#add_subdirectory("${GLAD_SOURCES_DIR}/cmake" glad_cmake)
 	glad_add_library(glad_gl_core_33 REPRODUCIBLE API gl:core=3.3)
 endif()
 
 if (NOT TARGET imgui)
-	set(IMGUI_DIR "example/lib/imgui-docking")
+	FetchContent_MakeAvailable(imgui)
+
+	set(IMGUI_DIR "${imgui_SOURCE_DIR}")
 
 	include_directories(SYSTEM
 		${IMGUI_DIR}
@@ -78,8 +101,7 @@ target_include_directories(ifd PUBLIC
 if (ifd_BUILD_EXAMPLES)
 	set(SDL_TEST OFF)
 	set(SDL2_DISABLE_SDL2MAIN ON)
-	set(SDL2_DIR "example/lib/sdl2")
-	add_subdirectory("${SDL2_DIR}")
+	FetchContent_MakeAvailable(sdl2)
 
 	file(REAL_PATH "${IMGUI_DIR}"
 		IMGUI_DIR_ABS
@@ -87,20 +109,20 @@ if (ifd_BUILD_EXAMPLES)
 
 	message("IMGUI_DIR_ABS = ${IMGUI_DIR_ABS}")
 
-	add_executable(demo
-		example/demo.cpp
+	add_executable(ImFileDialogExample
+		example/ImFileDialogExample.cpp
 		${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
 		${IMGUI_DIR}/backends/imgui_impl_sdl2.cpp
 	)
-	target_include_directories(demo PRIVATE
+	target_include_directories(ImFileDialogExample PRIVATE
 		${OPENGL_INCLUDE_DIR}
 		${SDL2_SOURCE_DIR}/include
 	)
-	target_compile_definitions(demo PRIVATE
+	target_compile_definitions(ImFileDialogExample PRIVATE
 		IMGUI_DIR="${IMGUI_DIR_ABS}"
 		IMGUI_USER_CONFIG="${CMAKE_CURRENT_SOURCE_DIR}/example/imconfig.h"
 	)
-	target_link_libraries(demo
+	target_link_libraries(ImFileDialogExample
 		${OPENGL_LIBRARIES}
 		SDL2-static
 		glad_gl_core_33

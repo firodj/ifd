@@ -39,6 +39,4 @@ ImFileDialogExample
 CMakeCache.txt
 CMakeFiles
 
-/example/lib/*
-
 /build*
