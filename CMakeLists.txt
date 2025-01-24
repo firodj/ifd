@@ -96,7 +96,6 @@ endif()
 target_link_libraries(ifd PUBLIC imgui)
 target_include_directories(ifd PUBLIC
 	${PROJECT_SOURCE_DIR}/src
-	${PROJECT_SOURCE_DIR}/example/lib/stb
 )
 if (ifd_BUILD_EXAMPLES)
 	set(SDL_TEST OFF)
