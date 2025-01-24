@@ -1,7 +1,7 @@
 #include "DirectoryIterator.hpp"
 
 #ifdef _WIN32
-#include <kosongg/win32dirent.h>
+#include "win32dirent.h"
 #else
 #include <dirent.h>
 #endif
