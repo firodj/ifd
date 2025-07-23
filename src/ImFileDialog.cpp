@@ -46,9 +46,9 @@
 #include "DirectoryIterator.hpp"
 #include "StrUtil.hpp"
 
-#define ICON_SIZE ImGui::GetFont()->FontSize + 3
+#define ICON_SIZE        GImGui->FontSize + 3
 #define GUI_ELEMENT_SIZE ImMax(GImGui->FontSize + 10.f, 24.f)
-#define PI 3.141592f
+#define PI               3.141592f
 
 // ref: https://en.cppreference.com/w/cpp/filesystem/file_size
 struct HumanReadable
